@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Happy Birthday!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&family=Reenie+Beanie&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --sky: #bfe0ff;
+      --ink: #15213f;
+      --butter: #ffd84d;
+      --cherry: #ff4d6d;
+      --mint: #c9f2e3;
+      --lilac: #e4d9ff;
+      --blush: #ffd6df;
+      --paper: #fffdf7;
+      --muted: #5d678a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    }
+    input, textarea { user-select: text; -webkit-user-select: text; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      background: var(--ink);
+      color: var(--ink);
+    }
+    body { position: fixed; inset: 0; }
+
+    .screen-view {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      z-index: 10;
+      padding: 54px 20px 126px;
+      text-align: center;
+    }
+    .screen-view.visible { display: flex !important; z-index: 20; }
+
+    .h1 {
+      font-size: clamp(2.1rem, 10vw, 3rem);
+      font-weight: 800;
+      line-height: 0.98;
+      letter-spacing: -0.035em;
+    }
+    .lede {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.35;
+      margin-top: 10px;
+      opacity: 0.72;
+    }
+
+    /* story-style progress */
+    .stories {
+      position: fixed;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      gap: 5px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .seg { flex: 1; height: 4px; border-radius: 2px; background: rgba(21,33,63,0.18); overflow: hidden; transition: background 0.6s; }
+    .seg i { display: block; height: 100%; width: 0; background: var(--ink); transition: width 0.5s ease, background 0.6s; }
+    .seg.done i, .seg.now i { width: 100%; }
+    body.dark .seg { background: rgba(255,255,255,0.22); }
+    body.dark .seg i { background: #fff; }
+
+    /* nav buttons */
+    .nav-btn {
+      position: fixed;
+      bottom: 78px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 0;
+      background: var(--ink);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9990;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(21,33,63,0.28);
+      transition: opacity 0.3s, transform 0.2s;
+    }
+    .nav-btn:active { transform: scale(0.92); }
+    .nav-btn:focus-visible { outline: 3px solid var(--cherry); outline-offset: 3px; }
+    .nav-btn.next { right: 16px; }
+    .nav-btn.back { left: 16px; background: rgba(255,255,255,0.9); color: var(--ink); }
+    .nav-btn.hidden { opacity: 0; pointer-events: none; }
+    .nav-btn.next.ready { animation: ring 1.4s infinite; }
+    body.dark .nav-btn.next { background: var(--butter); color: var(--ink); }
+    @keyframes ring {
+      0%   { box-shadow: 0 0 0 0 rgba(255,77,109,0.65), 0 6px 16px rgba(21,33,63,0.28); }
+      100% { box-shadow: 0 0 0 18px rgba(255,77,109,0), 0 6px 16px rgba(21,33,63,0.28); }
+    }
+
+    /* ============ SCREEN 1: ENVELOPE ============ */
+    #page-env { background: var(--sky); }
+    #page-env::before, #page-env::after {
+      content: '';
+      position: absolute;
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      filter: blur(2px);
+    }
+    #page-env::before { width: 180px; height: 56px; left: -40px; top: 16%; }
+    #page-env::after  { width: 220px; height: 64px; right: -70px; bottom: 22%; }
+
+    .env-scene { margin-top: 150px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
+    .env {
+      position: relative;
+      width: min(290px, 80vw);
+      height: 196px;
+      cursor: pointer;
+      perspective: 1000px;
+      margin-bottom: 30px;
+    }
+    .env:not(.open) { animation: nudge 2.8s ease-in-out infinite; }
+    @keyframes nudge {
+      0%, 86%, 100% { transform: rotate(0); }
+      91% { transform: rotate(-2.2deg); }
+      96% { transform: rotate(2.2deg); }
+    }
+    .env-back { position: absolute; inset: 0; background: #f0bf2a; border-radius: 8px; z-index: 0; box-shadow: 0 14px 28px rgba(21,33,63,0.18); }
+    .env-card {
+      position: absolute;
+      left: 7%; right: 7%; top: 12px;
+      height: 170px;
+      background: var(--paper);
+      border-radius: 8px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px;
+      transition: transform 0.9s cubic-bezier(0.3, 1.2, 0.4, 1) 0.45s;
+      box-shadow: 0 4px 12px rgba(21,33,63,0.14);
+    }
+    .env.open .env-card { transform: translateY(-150px); }
+    .card-s { font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+    .card-b { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1; color: var(--ink); word-break: break-word; }
+    .env-pocket { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: 8px; overflow: hidden; }
+    .env-pocket::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--butter);
+      clip-path: polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%);
+    }
+    .env-flap {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 55%;
+      background: #ffe27a;
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform-origin: top;
+      z-index: 4;
+      transition: transform 0.6s ease, z-index 0s 0.3s;
+    }
+    .env.open .env-flap { transform: rotateX(180deg); z-index: 1; }
+    .seal {
+      position: absolute;
+      left: 50%; top: 55%;
+      width: 50px; height: 50px;
+      margin: -25px 0 0 -25px;
+      border-radius: 50%;
+      background: var(--cherry);
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      z-index: 6;
+      box-shadow: 0 4px 0 #c42b48;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .env.open .seal { opacity: 0; transform: scale(0.4); }
+
+    /* ============ SCREEN 2: CAKE ============ */
+    #page-cake { background: var(--ink); color: #fff; transition: background 0.9s ease, color 0.9s ease; }
+    #page-cake.lit { background: var(--butter); color: var(--ink); }
+
+    .cake { position: relative; width: 240px; height: 252px; margin-top: 30px; cursor: pointer; flex-shrink: 0; }
+    .cake::before {
+      content: '';
+      position: absolute;
+      left: -70px; right: -70px; top: -70px; bottom: -30px;
+      background: radial-gradient(closest-side at 50% 38%, rgba(255,200,90,0.4), rgba(255,200,90,0) 100%);
+      transition: opacity 0.8s;
+      pointer-events: none;
+    }
+    .cake.out::before { opacity: 0; }
+    .plate { position: absolute; left: 0; bottom: 0; width: 240px; height: 24px; border-radius: 50%; background: #f3f5ff; box-shadow: 0 8px 0 #c3cbec; }
+    .tier { position: absolute; left: 50%; transform: translateX(-50%); border-radius: 14px 14px 10px 10px; overflow: hidden; }
+    .tier::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: #fff; }
+    .tier::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 14px;
+      background: radial-gradient(circle at 12px 0, #fff 11px, transparent 12px) 0 0 / 24px 14px repeat-x;
+      z-index: 1;
+    }
+    .t-bot {
+      bottom: 16px;
+      width: 214px;
+      height: 96px;
+      background-color: #ff8fa8;
+      background-image:
+        radial-gradient(circle at 18% 62%, #ffd84d 3px, transparent 3.5px),
+        radial-gradient(circle at 36% 82%, #8be3c4 3px, transparent 3.5px),
+        radial-gradient(circle at 80% 58%, #fff 3px, transparent 3.5px),
+        radial-gradient(circle at 90% 84%, #bfe0ff 3px, transparent 3.5px),
+        radial-gradient(circle at 10% 86%, #fff 3px, transparent 3.5px);
+    }
+    .t-top { bottom: 104px; width: 152px; height: 72px; background: var(--butter); }
+    #page-cake.lit .t-top { background: #ffc233; }
+    .cake-age {
+      position: absolute;
+      left: 0; right: 0; bottom: 20px;
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 2px 0 rgba(160,40,70,0.35);
+      z-index: 2;
+      pointer-events: none;
+    }
+    .candles {
+      position: absolute;
+      left: 50%;
+      bottom: 172px;
+      width: 150px;
+      margin-left: -75px;
+      display: flex;
+      justify-content: space-evenly;
+      z-index: 3;
+    }
+    .candle {
+      position: relative;
+      width: 9px;
+      height: 40px;
+      border-radius: 3px;
+      background: repeating-linear-gradient(-45deg, #fff 0 6px, var(--cherry) 6px 12px);
+    }
+    .flame {
+      position: absolute;
+      left: 50%; bottom: 100%;
+      margin-left: -6px; margin-bottom: 3px;
+      width: 12px; height: 20px;
+      border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+      background: radial-gradient(ellipse at 50% 72%, #fff6c2 0, #ffd84d 40%, #ff8a2a 100%);
+      box-shadow: 0 0 14px 4px rgba(255,190,70,0.7);
+      transform-origin: 50% 100%;
+      animation: flicker 0.25s infinite alternate;
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .candle:nth-child(2) .flame { animation-delay: -0.08s; }
+    .candle:nth-child(3) .flame { animation-delay: -0.15s; }
+    .candle:nth-child(4) .flame { animation-delay: -0.05s; }
+    @keyframes flicker {
+      from { transform: scale(1, 1) rotate(-4deg); }
+      to   { transform: scale(0.9, 1.1) rotate(4deg); }
+    }
+    .candle.out .flame { animation: none; opacity: 0; transform: scale(0.2); }
+    .smoke {
+      position: absolute;
+      left: 50%; bottom: 100%;
+      width: 6px; height: 6px;
+      margin-left: -3px;
+      border-radius: 50%;
+      background: rgba(210,215,235,0.85);
+      opacity: 0;
+    }
+    .candle.out .smoke { animation: smoke 1.3s ease-out forwards; }
+    @keyframes smoke {
+      0%   { opacity: 0.85; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-56px) scale(4); }
+    }
+
+    /* ============ SCREEN 3: POLAROID LINE ============ */
+    #page-pol { background: var(--mint); }
+    .pol-wrap { display: flex; flex-direction: column; gap: 40px; width: 100%; max-width: 380px; margin-top: 22px; }
+    .pol-row { position: relative; display: flex; justify-content: space-evenly; align-items: flex-start; padding-top: 12px; }
+    .rope { position: absolute; left: -14px; right: -14px; top: 0; height: 16px; border-bottom: 3px solid var(--ink); border-radius: 0 0 50% 50% / 0 0 16px 16px; opacity: 0.85; }
+    .pol {
+      position: relative;
+      width: 28%;
+      background: #fff;
+      padding: 6px 6px 8px;
+      border-radius: 3px;
+      box-shadow: 0 8px 18px rgba(21,33,63,0.18);
+      transform-origin: 50% 0;
+      transform: rotate(var(--rot, 0deg));
+      animation: sway 4s ease-in-out infinite;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    @keyframes sway {
+      0%, 100% { transform: rotate(calc(var(--rot, 0deg) - 2deg)); }
+      50%      { transform: rotate(calc(var(--rot, 0deg) + 2deg)); }
+    }
+    .peg { position: absolute; left: 50%; top: -12px; width: 10px; height: 20px; margin-left: -5px; background: #e8b55b; border-radius: 2px; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.12); }
+    .pic { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 3px; background: #eee; }
+    .pic img, .pic .ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .pic img { display: block; }
+    .ph { display: grid; place-items: center; font-size: 2.6rem; }
+    .pol .cap { display: block; margin-top: 6px; font-family: 'Reenie Beanie', cursive; font-size: 1.15rem; line-height: 1; color: var(--ink); }
+
+    .zoom-modal { position: fixed; inset: 0; background: rgba(21,33,63,0.9); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 99999; padding: 20px; }
+    .zoom-card { background: #fff; padding: 10px 10px 14px; border-radius: 6px; max-width: 84vw; transform: rotate(-1.5deg); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.2, 1.3, 0.4, 1); }
+    .zoom-card .pic { width: min(78vw, 340px); aspect-ratio: 4 / 5; }
+    .zoom-card .cap { display: block; margin-top: 8px; font-family: 'Reenie Beanie', cursive; font-size: 1.7rem; line-height: 1; }
+    .zoom-hint { color: #fff; opacity: 0.7; font-size: 0.85rem; margin-top: 18px; }
+    @keyframes popIn { from { transform: scale(0.8) rotate(-4deg); opacity: 0; } to { transform: scale(1) rotate(-1.5deg); opacity: 1; } }
+
+    /* ============ SCREEN 4: FLIP CARDS ============ */
+    #page-flip { background: var(--lilac); }
+    .flip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 360px; margin-top: 20px; }
+    .fc { perspective: 700px; height: clamp(104px, 17vh, 132px); cursor: pointer; }
+    .fc-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.3, 1.3, 0.5, 1); }
+    .fc.flipped .fc-in { transform: rotateY(180deg); }
+    .fc-f, .fc-b {
+      position: absolute; inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px;
+    }
+    .fc-f { background: var(--c); }
+    .fc-f .ic { font-size: 2rem; line-height: 1; }
+    .fc-f b { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
+    .fc-b { background: var(--ink); color: #fff; transform: rotateY(180deg); font-size: 0.86rem; line-height: 1.3; font-weight: 500; }
+
+    /* ============ SCREEN 5: BALLOONS ============ */
+    #page-bal { background: linear-gradient(#cfe9ff, #fff3da); justify-content: flex-start; padding-top: 70px; }
+    .bal-count { margin-top: 12px; font-weight: 700; font-size: 0.9rem; background: var(--ink); color: #fff; padding: 4px 14px; border-radius: 20px; }
+    .wish { min-height: 70px; margin-top: 14px; font-size: 1.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; max-width: 300px; display: flex; align-items: center; justify-content: center; }
+    .wish.in { animation: wishIn 0.4s ease-out; }
+    @keyframes wishIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+    .bln {
+      position: absolute;
+      width: 68px; height: 82px;
+      border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
+      background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.8) 0, rgba(255,255,255,0) 26%), var(--c);
+      box-shadow: inset -8px -10px 14px rgba(0,0,0,0.12);
+      cursor: pointer;
+      animation: bob 3.2s ease-in-out infinite;
+      transform-origin: 50% 100%;
+    }
+    .bln::before { content: ''; position: absolute; left: 50%; top: 100%; width: 1.5px; height: 70px; background: rgba(21,33,63,0.4); margin-left: -0.75px; }
+    .bln::after { content: ''; position: absolute; left: 50%; top: 97%; margin-left: -5px; border: 5px solid transparent; border-bottom: 8px solid var(--c); border-top: 0; }
+    @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+    .bln.pop { animation: popB 0.22s ease-out forwards; pointer-events: none; }
+    @keyframes popB { to { transform: scale(1.7); opacity: 0; } }
+
+    /* ============ SCREEN 6: SWIPE PHOTOS ============ */
+    #page-stack { background: var(--blush); }
+    .stack { position: relative; width: min(280px, 76vw); height: min(370px, 44vh); margin-top: 24px; touch-action: none; }
+    .sc {
+      position: absolute; inset: 0;
+      background: #fff;
+      border-radius: 18px;
+      padding: 12px 12px 12px;
+      box-shadow: 0 14px 30px rgba(21,33,63,0.2);
+      display: flex; flex-direction: column;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.35s;
+    }
+    .sc.drag { transition: none; cursor: grabbing; }
+    .sc .pic { flex: 1; aspect-ratio: auto; border-radius: 10px; }
+    .sc .cap { font-family: 'Reenie Beanie', cursive; font-size: 1.8rem; margin-top: 8px; line-height: 1; }
+
+    /* ============ SCREEN 7: LETTER ============ */
+    #page-letter { background: #ffe9a8; }
+    .sheet {
+      position: relative;
+      width: min(320px, 86vw);
+      min-height: min(430px, 58vh);
+      background-color: #fffef8;
+      background-image: linear-gradient(transparent 33px, rgba(90,120,200,0.25) 33px);
+      background-size: 100% 34px;
+      background-position: 0 30px;
+      border-radius: 4px;
+      padding: 30px 22px 24px 26px;
+      transform: rotate(-1.2deg);
+      box-shadow: 0 16px 34px rgba(21,33,63,0.2);
+      text-align: left;
+      cursor: pointer;
+    }
+    .sheet::before { content: ''; position: absolute; top: -12px; left: 50%; width: 90px; height: 24px; margin-left: -45px; background: rgba(255,216,77,0.85); transform: rotate(2deg); }
+    .sheet p { font-family: 'Reenie Beanie', cursive; font-size: 1.85rem; line-height: 34px; color: var(--ink); }
+    .sheet .sign { margin-top: 10px; opacity: 0; transition: opacity 0.6s; }
+    .sheet .sign.show { opacity: 1; }
+    .caret::after { content: '|'; margin-left: 1px; animation: blink 0.8s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ============ SCREEN 8 (gift): kept from the previous site ============ */
+    /* SCREEN 8: SURPRISE FOR YOU + 3D IPHONE 18 PRO MAX */
+    #page-gift {
+      background: radial-gradient(circle at center, #260f17 0%, #0a0408 100%);
+      justify-content: flex-start;
+      padding: 62px 16px 85px;
+      perspective: 1400px;
+      text-align: center;
+    }
+    .gift-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      color: #ffd166;
+      text-shadow: 0 0 20px rgba(255, 209, 102, 0.4);
+      margin-bottom: 4px;
+      position: relative;
+      z-index: 5;
+    }
+    .gift-sub {
+      color: #e5b3c2;
+      font-size: 0.88rem;
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Guess input */
+    .guess-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+      margin-top: 8px;
+      position: relative;
+      z-index: 120;
+      transition: opacity 0.4s ease;
+    }
+    .guess-panel.hide { opacity: 0; pointer-events: none; }
+    #guessInput {
+      width: 100%;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid #ffd166;
+      color: #fff;
+      border-radius: 28px;
+      padding: 13px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+      box-shadow: 0 0 18px rgba(255, 209, 102, 0.25);
+    }
+    #guessInput::placeholder { color: #c99aa9; font-weight: 400; }
+    #guessInput.shake { animation: shakeInput 0.4s; }
+    @keyframes shakeInput {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .guess-result {
+      position: absolute;
+      top: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 330px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #fff5d6;
+      text-shadow: 0 0 14px rgba(255, 209, 102, 0.5);
+      display: none;
+      z-index: 130;
+      min-height: 30px;
+    }
+
+    /* 3D Gift Box: maroon box, separate lid, satin gold ribbon and a bow */
+    .gift-box-3d {
+      width: 150px;
+      height: 150px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-18deg);
+      cursor: pointer;
+      margin: 58px auto 30px;
+      flex-shrink: 0;
+      transition: transform 0.9s ease, visibility 0s linear 0.9s;
+    }
+    .gb-spin {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      animation: gbSpin 7s ease-in-out infinite alternate;
+    }
+    @keyframes gbSpin {
+      from { transform: rotateY(-38deg) translateY(0); }
+      to   { transform: rotateY(32deg) translateY(-8px); }
+    }
+    .gb-shadow {
+      position: absolute;
+      left: -15px;
+      top: 47px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,0,0,0.65), rgba(0,0,0,0) 62%);
+      transform: rotateX(90deg);
+      pointer-events: none;
+    }
+
+    /* base box: 140 x 92 x 140 */
+    .gb-base {
+      position: absolute;
+      left: 5px;
+      top: 44px;
+      width: 140px;
+      height: 92px;
+      transform-style: preserve-3d;
+    }
+    .gf {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 140px;
+      height: 92px;
+    }
+    .gf-front  { transform: translateZ(70px);                background: linear-gradient(160deg, #751f3a, #4d1226); }
+    .gf-back   { transform: rotateY(180deg) translateZ(70px); background: linear-gradient(160deg, #3b0e1c, #2a0913); }
+    .gf-left   { transform: rotateY(-90deg) translateZ(70px); background: linear-gradient(160deg, #5e1a30, #3a0e1c); }
+    .gf-right  { transform: rotateY(90deg) translateZ(70px);  background: linear-gradient(160deg, #4a1226, #2f0a15); }
+    .gf-bottom { top: -24px; height: 140px; transform: rotateX(-90deg) translateZ(46px); background: #1a0509; }
+    .gf-front::before, .gf-back::before, .gf-left::before, .gf-right::before {
+      content: '';
+      position: absolute;
+      left: calc(50% - 11px);
+      top: 0;
+      bottom: 0;
+      width: 22px;
+      background: linear-gradient(90deg, #b07a10, #ffe28a 42%, #e2a62a 58%, #9a680c);
+    }
+
+    /* lid + bow fly off together when opened */
+    .gb-topper {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .gb-lid {
+      position: absolute;
+      left: 0;
+      top: 14px;
+      width: 150px;
+      height: 30px;
+      transform-style: preserve-3d;
+    }
+    .lf {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 150px;
+      height: 30px;
+    }
+    .lf-front  { transform: translateZ(75px);                background: linear-gradient(160deg, #8a2744, #5a1630); border-top: 1px solid rgba(255,255,255,0.22); }
+    .lf-back   { transform: rotateY(180deg) translateZ(75px); background: linear-gradient(160deg, #46101f, #310a16); }
+    .lf-left   { transform: rotateY(-90deg) translateZ(75px); background: linear-gradient(160deg, #70203a, #45121f); }
+    .lf-right  { transform: rotateY(90deg) translateZ(75px);  background: linear-gradient(160deg, #5a1830, #380d1b); }
+    .lf-top    { top: -60px; height: 150px; transform: rotateX(90deg) translateZ(15px); background: linear-gradient(135deg, #a33253, #6e1b36); }
+    .lf-bottom { top: -60px; height: 150px; transform: rotateX(-90deg) translateZ(15px); background: #1a0509; }
+    .lf-front::before, .lf-back::before, .lf-left::before, .lf-right::before {
+      content: '';
+      position: absolute;
+      left: calc(50% - 11px);
+      top: 0;
+      bottom: 0;
+      width: 22px;
+      background: linear-gradient(90deg, #b07a10, #ffe28a 42%, #e2a62a 58%, #9a680c);
+    }
+    .lf-top::before {
+      content: '';
+      position: absolute;
+      left: calc(50% - 11px);
+      top: 0;
+      bottom: 0;
+      width: 22px;
+      background: linear-gradient(90deg, #b07a10, #ffe28a 42%, #e2a62a 58%, #9a680c);
+    }
+    .lf-top::after {
+      content: '';
+      position: absolute;
+      top: calc(50% - 11px);
+      left: 0;
+      right: 0;
+      height: 22px;
+      background: linear-gradient(180deg, #b07a10, #ffe28a 42%, #e2a62a 58%, #9a680c);
+    }
+
+    /* bow, standing on the middle of the lid */
+    .gb-bow {
+      position: absolute;
+      left: 75px;
+      top: 14px;
+      width: 0;
+      height: 0;
+      transform-style: preserve-3d;
+    }
+    .bw-loop {
+      position: absolute;
+      left: -23px;
+      top: -33px;
+      width: 46px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 50% 62%, rgba(0,0,0,0) 0 34%, #ffe69a 37%, #e3a82a 62%, #9c6a0c 100%);
+    }
+    .bw-l1 { transform: translateX(-24px) rotateZ(-16deg); }
+    .bw-l2 { transform: translateX(24px) rotateZ(16deg); }
+    .bw-l3 { transform: rotateY(90deg) translateX(-24px) rotateZ(-16deg); }
+    .bw-l4 { transform: rotateY(90deg) translateX(24px) rotateZ(16deg); }
+    .bw-knot {
+      position: absolute;
+      left: -10px;
+      top: -15px;
+      width: 20px;
+      height: 16px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #b07a10, #ffe28a 45%, #e2a62a 60%, #9a680c);
+    }
+    .bw-knot.b { transform: rotateY(90deg); }
+    .bw-knot.top {
+      top: -10px;
+      height: 20px;
+      transform: translateY(-15px) rotateX(90deg);
+      background: linear-gradient(135deg, #ffe9a8, #e2a62a);
+    }
+
+    .gift-box-3d.opened {
+      transform: rotateX(-18deg) translateY(50px) scale(0.2);
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .gift-box-3d.opened .gb-topper {
+      transform: translateY(-190px) rotateZ(18deg) rotateX(-25deg);
+    }
+
+    /* 3D iPhone 18 Pro Max  (196 x 412 body, 20px thick, 42px corner radius) */
+    .phone-stage-3d {
+      width: 196px;
+      height: 412px;
+      perspective: 1500px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 1s ease;
+      z-index: 50;
+      touch-action: none;
+    }
+    .phone-stage-3d.revealed {
+      transform: translate(-50%, -50%) scale(var(--ps, 1));
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .phone-ground-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: -38px;
+      width: 180px;
+      height: 28px;
+      margin-left: -90px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.7), rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .iphone-18-chassis {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    /* Rounded titanium body = 21 stacked rounded rectangles, so the corners are truly round */
+    .rim-stack {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+    }
+    .rim-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: 42px;
+    }
+
+    /* Straight titanium side walls (stop where the rounded corners start) */
+    .wall { position: absolute; }
+    .wall-l, .wall-r {
+      top: 42px;
+      width: 20px;
+      height: 328px;
+      background: linear-gradient(90deg, #3d0d1a 0%, #8e2a45 30%, #b13a58 50%, #8e2a45 70%, #3d0d1a 100%);
+    }
+    .wall-l { left: -10px; transform: rotateY(90deg); }
+    .wall-r { left: 186px; transform: rotateY(90deg); }
+    .wall-t, .wall-b {
+      left: 42px;
+      width: 112px;
+      height: 20px;
+      background: linear-gradient(180deg, #3d0d1a 0%, #8e2a45 30%, #b13a58 50%, #8e2a45 70%, #3d0d1a 100%);
+    }
+    .wall-t { top: -10px; transform: rotateX(90deg); }
+    .wall-b {
+      top: 402px;
+      transform: rotateX(90deg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .usbc-port {
+      width: 24px;
+      height: 6px;
+      background: #0a0a0c;
+      border-radius: 3px;
+      border: 1px solid #5a2433;
+    }
+    .speaker-holes { display: flex; gap: 3px; }
+    .speaker-hole {
+      width: 3px;
+      height: 3px;
+      background: #0a0a0c;
+      border-radius: 50%;
+    }
+
+    /* Side buttons (sit just outside the walls) */
+    .hw-btn {
+      position: absolute;
+      width: 9px;
+      transform: rotateY(90deg);
+      background: linear-gradient(90deg, #4a1020, #b13a58 50%, #4a1020);
+      border-radius: 2px;
+    }
+    .hw-btn.left { left: -5.7px; }
+    .hw-btn.right { left: 192.7px; }
+    .hw-action { top: 72px; height: 24px; }
+    .hw-volup  { top: 112px; height: 42px; }
+    .hw-voldn  { top: 162px; height: 42px; }
+    .hw-power  { top: 150px; height: 66px; }
+    .hw-camctl { top: 300px; height: 36px; }
+
+    /* Front glass */
+    .iphone-face-front {
+      position: absolute;
+      inset: 4px;
+      background: #000;
+      border-radius: 38px;
+      transform: translateZ(10.6px);
+      display: flex;
+      flex-direction: column;
+      padding: 10px 11px 10px;
+      overflow: hidden;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .front-wallpaper {
+      position: absolute;
+      inset: 2px;
+      border-radius: 36px;
+      background: radial-gradient(circle at 50% 20%, #571324, #120308 85%);
+      z-index: 1;
+    }
+    .front-glare {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      background: linear-gradient(115deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 38%);
+    }
+    .ios-status-row {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
+    .ios-clock { font-size: 0.7rem; font-weight: 700; color: #fff; }
+    .i18-island {
+      width: 62px;
+      height: 17px;
+      background: #000;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .ios-icons { font-size: 0.6rem; color: #fff; }
+
+    .ios-app-grid {
+      position: relative;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 6px;
+      margin-top: 24px;
+      padding: 0 2px;
+    }
+    .ios-app-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .app-icon-squircle {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    .app-label {
+      font-size: 0.5rem;
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+    .ios-dock {
+      position: relative;
+      z-index: 5;
+      background: rgba(255,255,255,0.22);
+      border-radius: 20px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 6px 4px;
+      margin-top: auto;
+    }
+    .home-bar {
+      position: relative;
+      z-index: 6;
+      width: 64px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.75);
+      margin: 8px auto 0;
+    }
+
+    /* Back glass: the camera plateau and lenses are real stacked 3D layers */
+    .iphone-face-back {
+      position: absolute;
+      inset: 4px;
+      border-radius: 38px;
+      transform: rotateY(180deg) translateZ(10.6px);
+      transform-style: preserve-3d;
+      background: linear-gradient(150deg, #6a1429 0%, #3d0a18 45%, #260511 100%);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .iphone-face-back::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 38px;
+      pointer-events: none;
+      background: linear-gradient(115deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 42%);
+    }
+
+    .cam-plateau {
+      position: absolute;
+      top: 11px;
+      left: 11px;
+      width: 94px;
+      height: 94px;
+      transform-style: preserve-3d;
+    }
+    .pl {
+      position: absolute;
+      inset: 0;
+      border-radius: 26px;
+    }
+    .pl-shadow {
+      background: rgba(0,0,0,0.4);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.65);
+      transform: translateZ(0.4px);
+    }
+    .pl-side { background: linear-gradient(145deg, #a04a64, #6d2438); }
+    .pl-top {
+      background: linear-gradient(145deg, #a8506b, #6d2438 62%, #571b2d);
+      border: 1px solid rgba(255,255,255,0.32);
+      transform: translateZ(6.2px);
+    }
+
+    .cam-lens {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      transform-style: preserve-3d;
+      transform: translateZ(6.2px);
+    }
+    .cam-lens.l1 { top: 8px;  left: 8px; }
+    .cam-lens.l2 { top: 50px; left: 8px; }
+    .cam-lens.l3 { top: 29px; left: 50px; }
+    .cs {
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      box-shadow: 0 3px 7px rgba(0,0,0,0.7);
+      transform: translateZ(0.3px);
+    }
+    .cl {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 210deg, #d8c3c9, #5d4a50, #efe1e5, #4d3b42, #d8c3c9);
+    }
+    .cl1 { transform: translateZ(1px); }
+    .cl2 { transform: translateZ(2px); }
+    .cl3 { transform: translateZ(3px); }
+    .cl4 { transform: translateZ(4px); }
+    .cl5 { transform: translateZ(5px); }
+    .cg {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #5a5fa8 0, #1a1b36 26%, #07070d 62%, #000 100%);
+      transform: translateZ(5.4px);
+    }
+    .cg::before {
+      content: '';
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      border: 1px solid rgba(140,150,255,0.35);
+    }
+    .cg::after {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(200,210,255,0.6);
+    }
+    .cam-flash {
+      position: absolute;
+      top: 10px;
+      right: 9px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fffbe6 30%, #e6c872 100%);
+      border: 1px solid rgba(255,255,255,0.45);
+      transform: translateZ(6.5px);
+    }
+    .cam-mic {
+      position: absolute;
+      top: 16px;
+      left: 58px;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #0a0306;
+      transform: translateZ(6.5px);
+    }
+    .cam-lidar {
+      position: absolute;
+      bottom: 9px;
+      right: 10px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #000 35%, #2a1a20 100%);
+      border: 1px solid rgba(255,255,255,0.28);
+      transform: translateZ(6.5px);
+    }
+    .apple-logo-svg {
+      position: absolute;
+      left: 50%;
+      top: 57%;
+      width: 42px;
+      height: 50px;
+      margin-left: -21px;
+      margin-top: -25px;
+      transform: translateZ(0.5px);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.55));
+    }
+
+    .unbox-instruction-btn {
+      background: linear-gradient(135deg, #ffd166, #ffbe0b);
+      color: #111;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255, 209, 102, 0.4);
+      z-index: 100;
+    }
+
+    /* once the phone shows up, only the swipe hint stays (at the bottom) */
+    .gift-title, .gift-sub, .guess-result { transition: opacity 0.5s ease; }
+    #page-gift.phone-mode .gift-title,
+    #page-gift.phone-mode .gift-sub,
+    #page-gift.phone-mode .guess-result,
+    #page-gift.phone-mode .guess-panel,
+    #page-gift.phone-mode .gift-box-3d {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .rotate-hint-3d {
+      color: #ffd166;
+      font-size: 0.82rem;
+      position: absolute;
+      bottom: 74px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 92%;
+      text-align: center;
+      white-space: normal;
+      text-wrap: balance;
+      display: none;
+      z-index: 100;
+      letter-spacing: 0.5px;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 16px;
+      border-radius: 20px;
+    }
+
+
+    #page-gift { background: radial-gradient(circle at 50% 30%, #2b3b70 0%, #0d1530 82%); }
+    .gift-title { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; letter-spacing: -0.035em; color: var(--butter); text-shadow: none; font-size: 2.2rem; }
+    .gift-sub { color: #cdd6f5; }
+    .guess-result { color: #fff; text-shadow: none; }
+    #guessInput { border-color: var(--butter); box-shadow: 0 0 18px rgba(255,216,77,0.25); }
+    #guessInput::placeholder { color: #9aa6d3; }
+
+    /* music pill */
+    .music-dock {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 360px;
+      background: #fff;
+      border-radius: 30px;
+      padding: 6px 8px 6px 7px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 9995;
+      box-shadow: 0 8px 24px rgba(21,33,63,0.24);
+    }
+    .disc {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: conic-gradient(var(--cherry), var(--butter), #8be3c4, var(--sky), var(--cherry));
+      display: grid; place-items: center;
+      animation: spin 5s linear infinite;
+      animation-play-state: paused;
+      flex-shrink: 0;
+    }
+    .disc.playing { animation-play-state: running; }
+    .disc::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .track { flex: 1; min-width: 0; text-align: left; }
+    .track b { display: block; font-size: 0.85rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track span { font-size: 0.72rem; color: var(--muted); }
+    .play-btn { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--ink); color: #fff; font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
+
+
+    /* short phones */
+    @media (max-height: 700px) {
+      .h1 { font-size: clamp(1.8rem, 9vw, 2.4rem); }
+      .lede { margin-top: 6px; font-size: 0.92rem; }
+      .pol-wrap { gap: 28px; margin-top: 14px; }
+      .pol .pic { aspect-ratio: 1 / 1; }
+      .fc { height: clamp(88px, 14vh, 110px); }
+      .flip-grid { margin-top: 14px; gap: 10px; }
+      .env-scene { margin-top: 130px; }
+      .sheet { min-height: 0; padding: 26px 20px 20px 24px; }
+      .sheet p { font-size: 1.65rem; line-height: 30px; }
+      .sheet {
+        background-image: linear-gradient(transparent 29px, rgba(90,120,200,0.25) 29px);
+        background-size: 100% 30px;
+        background-position: 0 26px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pol, .bln, .flame, .env, .disc { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <audio id="bgSong" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <div class="stories" id="stories"></div>
+
+  <button class="nav-btn back hidden" id="btnBack" aria-label="Previous" onclick="navigateStep(-1)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <button class="nav-btn next hidden" id="btnNext" aria-label="Next" onclick="navigateStep(1)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+
+  <!-- 1. ENVELOPE -->
+  <section class="screen-view visible" id="page-env" style="display:flex">
+    <div class="env-scene">
+      <div class="env" id="env" onclick="openEnvelope()">
+        <div class="env-back"></div>
+        <div class="env-card">
+          <span class="card-s">Happy birthday</span>
+          <span class="card-b" id="cardName"></span>
+          <span class="card-s">Today is all yours.</span>
+        </div>
+        <div class="env-pocket"></div>
+        <div class="env-flap"></div>
+        <div class="seal">🎂</div>
+      </div>
+      <h1 class="h1" id="envTitle"></h1>
+      <p class="lede" id="envSub">Tap the envelope to open it</p>
+    </div>
+  </section>
+
+  <!-- 2. CAKE -->
+  <section class="screen-view" id="page-cake">
+    <h1 class="h1" id="cakeTitle">Make a wish</h1>
+    <p class="lede" id="cakeSub">Tap the cake to blow out the candles</p>
+    <div class="cake" id="cake" onclick="blowCandles()">
+      <div class="plate"></div>
+      <div class="tier t-bot"><div class="cake-age" id="cakeAge"></div></div>
+      <div class="tier t-top"></div>
+      <div class="candles">
+        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. POLAROID LINE -->
+  <section class="screen-view" id="page-pol">
+    <h1 class="h1">Little moments</h1>
+    <p class="lede">Tap a photo to see it bigger</p>
+    <div class="pol-wrap" id="polWrap"></div>
+  </section>
+
+  <!-- 4. FLIP CARDS -->
+  <section class="screen-view" id="page-flip">
+    <h1 class="h1">Why you're the best</h1>
+    <p class="lede">Tap a card</p>
+    <div class="flip-grid" id="flipGrid"></div>
+  </section>
+
+  <!-- 5. BALLOONS -->
+  <section class="screen-view" id="page-bal">
+    <h1 class="h1">Pop a balloon</h1>
+    <p class="lede">Each one hides a wish</p>
+    <div class="bal-count" id="balCount"></div>
+    <div class="wish" id="wishText"></div>
+    <div id="balField"></div>
+  </section>
+
+  <!-- 6. SWIPE PHOTOS -->
+  <section class="screen-view" id="page-stack">
+    <h1 class="h1">Swipe through</h1>
+    <p class="lede">Drag a photo away</p>
+    <div class="stack" id="stack"></div>
+  </section>
+
+  <!-- 7. LETTER -->
+  <section class="screen-view" id="page-letter">
+    <div class="sheet" id="sheet" onclick="tapLetter()">
+      <p id="letterHi"></p>
+      <p id="letterText"></p>
+      <p class="sign" id="letterSign"></p>
+    </div>
+  </section>
+
+  <!-- 8. SURPRISE (iPhone gift) -->
+  <!-- SCREEN 8: SURPRISE FOR YOU -->
+  <div class="screen-view" id="page-gift">
+    <h1 class="gift-title">Surprise for you! 🎁</h1>
+    <p class="gift-sub" id="giftSub">Guess what's inside and type it below ✍️</p>
+
+    <div class="guess-result" id="guessResult"></div>
+
+    <!-- 3D Gift Box -->
+    <div class="gift-box-3d" id="giftBox" onclick="document.getElementById('guessInput').focus()">
+      <div class="gb-shadow"></div>
+      <div class="gb-spin">
+
+        <div class="gb-base">
+          <div class="gf gf-front"></div>
+          <div class="gf gf-back"></div>
+          <div class="gf gf-left"></div>
+          <div class="gf gf-right"></div>
+          <div class="gf gf-bottom"></div>
+        </div>
+
+        <div class="gb-topper">
+          <div class="gb-lid">
+            <div class="lf lf-front"></div>
+            <div class="lf lf-back"></div>
+            <div class="lf lf-left"></div>
+            <div class="lf lf-right"></div>
+            <div class="lf lf-top"></div>
+            <div class="lf lf-bottom"></div>
+          </div>
+          <div class="gb-bow">
+            <div class="bw-loop bw-l1"></div>
+            <div class="bw-loop bw-l2"></div>
+            <div class="bw-loop bw-l3"></div>
+            <div class="bw-loop bw-l4"></div>
+            <div class="bw-knot a"></div>
+            <div class="bw-knot b"></div>
+            <div class="bw-knot top"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Guess input -->
+    <div class="guess-panel" id="guessPanel">
+      <input id="guessInput" type="text" placeholder="Type your guess here..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
+      <button class="unbox-instruction-btn" onclick="submitGuess()">Reveal 🎁</button>
+    </div>
+
+    <!-- 3D iPhone 18 Pro Max -->
+    <div class="phone-stage-3d" id="phoneStage">
+      <div class="phone-ground-shadow"></div>
+      <div class="iphone-18-chassis" id="i18Chassis">
+
+        <!-- rounded titanium body (filled by script) -->
+        <div class="rim-stack" id="rimStack"></div>
+
+        <!-- straight side walls -->
+        <div class="wall wall-l"></div>
+        <div class="wall wall-r"></div>
+        <div class="wall wall-t"></div>
+        <div class="wall wall-b">
+          <div class="speaker-holes">
+            <div class="speaker-hole"></div><div class="speaker-hole"></div><div class="speaker-hole"></div>
+            <div class="speaker-hole"></div><div class="speaker-hole"></div><div class="speaker-hole"></div>
+          </div>
+          <div class="usbc-port"></div>
+          <div class="speaker-holes">
+            <div class="speaker-hole"></div><div class="speaker-hole"></div><div class="speaker-hole"></div>
+            <div class="speaker-hole"></div><div class="speaker-hole"></div><div class="speaker-hole"></div>
+          </div>
+        </div>
+
+        <!-- buttons -->
+        <div class="hw-btn left hw-action"></div>
+        <div class="hw-btn left hw-volup"></div>
+        <div class="hw-btn left hw-voldn"></div>
+        <div class="hw-btn right hw-power"></div>
+        <div class="hw-btn right hw-camctl"></div>
+
+        <!-- Front glass -->
+        <div class="iphone-face-front">
+          <div class="front-wallpaper"></div>
+
+          <div class="ios-status-row">
+            <span class="ios-clock">12:01</span>
+            <div class="i18-island"></div>
+            <div class="ios-icons">5G 🔋</div>
+          </div>
+
+          <div class="ios-app-grid">
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #34c759, #30b0c7);">📞</div>
+              <span class="app-label">Phone</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #007aff, #5856d6);">💬</div>
+              <span class="app-label">Messages</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #ff9500, #ff3b30);">📷</div>
+              <span class="app-label">Camera</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #ff2d55, #ff375f);">🌸</div>
+              <span class="app-label">Photos</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: #1c1c1e;">⚙️</div>
+              <span class="app-label">Settings</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #fa2d48, #d81b60);">🎵</div>
+              <span class="app-label">Music</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: #ffcc00; color: #111;">📝</div>
+              <span class="app-label">Notes</span>
+            </div>
+            <div class="ios-app-item">
+              <div class="app-icon-squircle" style="background: linear-gradient(135deg, #5ac8fa, #007aff);">🧭</div>
+              <span class="app-label">Safari</span>
+            </div>
+          </div>
+
+          <div class="ios-dock">
+            <div class="app-icon-squircle" style="background: #34c759; width: 30px; height: 30px; font-size: 0.95rem;">📞</div>
+            <div class="app-icon-squircle" style="background: #007aff; width: 30px; height: 30px; font-size: 0.95rem;">💬</div>
+            <div class="app-icon-squircle" style="background: #5856d6; width: 30px; height: 30px; font-size: 0.95rem;">🧭</div>
+            <div class="app-icon-squircle" style="background: #ff2d55; width: 30px; height: 30px; font-size: 0.95rem;">🎵</div>
+          </div>
+          <div class="home-bar"></div>
+          <div class="front-glare"></div>
+        </div>
+
+        <!-- Back glass -->
+        <div class="iphone-face-back">
+          <div class="cam-plateau">
+            <div class="pl pl-shadow"></div>
+            <div class="pl pl-side" style="transform: translateZ(1px)"></div>
+            <div class="pl pl-side" style="transform: translateZ(2px)"></div>
+            <div class="pl pl-side" style="transform: translateZ(3px)"></div>
+            <div class="pl pl-side" style="transform: translateZ(4px)"></div>
+            <div class="pl pl-side" style="transform: translateZ(5px)"></div>
+            <div class="pl pl-top"></div>
+            <div class="cam-lens l1">
+              <div class="cs"></div>
+              <div class="cl cl1"></div><div class="cl cl2"></div><div class="cl cl3"></div><div class="cl cl4"></div><div class="cl cl5"></div>
+              <div class="cg"></div>
+            </div>
+            <div class="cam-lens l2">
+              <div class="cs"></div>
+              <div class="cl cl1"></div><div class="cl cl2"></div><div class="cl cl3"></div><div class="cl cl4"></div><div class="cl cl5"></div>
+              <div class="cg"></div>
+            </div>
+            <div class="cam-lens l3">
+              <div class="cs"></div>
+              <div class="cl cl1"></div><div class="cl cl2"></div><div class="cl cl3"></div><div class="cl cl4"></div><div class="cl cl5"></div>
+              <div class="cg"></div>
+            </div>
+            <div class="cam-flash"></div>
+            <div class="cam-mic"></div>
+            <div class="cam-lidar"></div>
+          </div>
+
+          <svg class="apple-logo-svg" viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffe6ee"/>
+                <stop offset="1" stop-color="#d596ac"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#logoGrad)" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
+          </svg>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="rotate-hint-3d" id="rotateHint">✨ Swipe on the phone to rotate your iPhone 18 Pro Max ✨</div>
+  </div>
+
+
+  <div class="zoom-modal" id="zoomModal" onclick="this.style.display='none'">
+    <div class="zoom-card">
+      <div class="pic" id="zoomPic"></div>
+      <span class="cap" id="zoomCap"></span>
+    </div>
+    <p class="zoom-hint">Tap anywhere to close</p>
+  </div>
+
+  <!-- music pill -->
+  <div class="music-dock">
+    <div class="disc" id="disc"></div>
+    <div class="track">
+      <b id="songTitle"></b>
+      <span id="songArtist"></span>
+    </div>
+    <button class="play-btn" id="playBtn" aria-label="Play or pause music" onclick="toggleAudioPlayback()">▶</button>
+  </div>
+
+  <script>
+    /* =====================================================
+       EDIT THIS BLOCK ONLY: name, age, photos, texts
+       ===================================================== */
+    const CONFIG = {
+      name: "",              // e.g. "Riya". Leave empty to say "you"
+      age: 0,                // e.g. 21. Leave 0 to hide the number
+      song: { title: "Birthday Song", artist: "Just for you" },   // file name must be music.mp3
+
+      photos: [               // photo1.jpg ... photo6.jpg in the same folder
+        { src: "photo1.jpg", cap: "Good times" },
+        { src: "photo2.jpg", cap: "Core memory" },
+        { src: "photo3.jpg", cap: "Peak laughing" },
+        { src: "photo4.jpg", cap: "That day" },
+        { src: "photo5.jpg", cap: "Us" },
+        { src: "photo6.jpg", cap: "Pure joy" }
+      ],
+
+      reasons: [              // 6 flip cards
+        { icon: "😂", title: "Laugh",  text: "Your laugh fixes a bad day in seconds." },
+        { icon: "🫶", title: "Kind",   text: "You make people feel looked after." },
+        { icon: "🔥", title: "Brave",  text: "You try the hard thing anyway." },
+        { icon: "🎧", title: "Taste",  text: "Best playlists. Best opinions on food." },
+        { icon: "🤝", title: "Loyal",  text: "You show up, every single time." },
+        { icon: "🌟", title: "You",    text: "Just exactly the way you are." }
+      ],
+
+      wishes: [               // 7 balloons
+        "May every plan this year work out.",
+        "More laughs than worries.",
+        "Good food and better company.",
+        "Tiny wins, every single day.",
+        "Big dreams and the courage to chase them.",
+        "Rest whenever you need it.",
+        "Many more years like this one."
+      ],
+
+      letter: {
+        body: "I hope today feels as good as you make everyone else feel. Thank you for the laughs, the patience, and for being exactly you. May this year bring you more peace, good food, and people who show up.",
+        sign: "With love"
+      },
+
+      gift: {
+        answer: "18promax",   // letters/numbers only, lowercase. A guess that contains this counts as right
+        right: "You are always right, cutie! 💖 Now see your surprise...",
+        wrong: "Oops, not quite! 😄 You're not always right, but it's totally okay, no problem. Now see your surprise!"
+      }
+    };
+
+    /* ===================================================== */
+
+    const $ = (s) => document.querySelector(s);
+    const NAME = CONFIG.name.trim();
+    const allScreens = ['page-env', 'page-cake', 'page-pol', 'page-flip', 'page-bal', 'page-stack', 'page-letter', 'page-gift'];
+    let currentStep = 0;
+    let lastNavTime = 0;
+    let isInteractingInternal = false;
+    let cakeLit = false;
+    const ready = {};
+    const audioTrack = document.getElementById('bgSong');
+
+    function boom(opts) { try { if (window.confetti) window.confetti(opts); } catch (e) {} }
+
+    /* emoji-safe typewriter */
+    function typeText(el, text, speed, onDone) {
+      const chars = Array.from(text);
+      let i = 0;
+      el.textContent = '';
+      const id = setInterval(() => {
+        if (i < chars.length) { el.textContent += chars[i++]; }
+        else { clearInterval(id); if (onDone) onDone(); }
+      }, speed);
+      return id;
+    }
+
+    /* photos, with a friendly placeholder if a file is missing */
+    const PH_COLORS = ['#ffd84d', '#8be3c4', '#bfe0ff', '#ffb3c4', '#e4d9ff', '#ffcf9e'];
+    const PH_EMOJI = ['🌸', '🎈', '✨', '🍰', '🌈', '💛'];
+    function photoEl(p, i) {
+      const img = new Image();
+      img.alt = p.cap || '';
+      img.draggable = false;
+      img.decoding = 'async';
+      img.addEventListener('error', () => {
+        const ph = document.createElement('div');
+        ph.className = 'ph';
+        ph.textContent = PH_EMOJI[i % PH_EMOJI.length];
+        ph.style.background = PH_COLORS[i % PH_COLORS.length];
+        img.replaceWith(ph);
+      });
+      img.src = p.src;
+      return img;
+    }
+    function el(cls, tag) { const d = document.createElement(tag || 'div'); if (cls) d.className = cls; return d; }
+
+    /* ---------- progress + nav ---------- */
+    const storiesEl = $('#stories');
+    allScreens.forEach(() => { const s = el('seg'); s.appendChild(document.createElement('i')); storiesEl.appendChild(s); });
+    const btnBack = $('#btnBack');
+    const btnNext = $('#btnNext');
+
+    function canAdvance() {
+      const id = allScreens[currentStep];
+      if (currentStep >= allScreens.length - 1) return false;
+      if (id === 'page-env' && !ready['page-env']) return false;
+      return true;
+    }
+    function syncTheme() {
+      const id = allScreens[currentStep];
+      document.body.classList.toggle('dark', id === 'page-gift' || (id === 'page-cake' && !cakeLit));
+    }
+    function syncNav() {
+      const id = allScreens[currentStep];
+      [...storiesEl.children].forEach((s, i) => {
+        s.classList.toggle('done', i < currentStep);
+        s.classList.toggle('now', i === currentStep);
+      });
+      btnBack.classList.toggle('hidden', currentStep === 0 || id === 'page-gift');
+      btnNext.classList.toggle('hidden', !canAdvance());
+      btnNext.classList.toggle('ready', !!ready[id]);
+      syncTheme();
+    }
+    function setReady(id) { ready[id] = true; syncNav(); }
+
+    function navigateStep(direction) {
+      const target = currentStep + direction;
+      if (target < 0 || target >= allScreens.length) return;
+      if (direction > 0 && !canAdvance()) return;
+      lastNavTime = Date.now();
+
+      const prevId = allScreens[currentStep];
+      const prevEl = document.getElementById(prevId);
+      prevEl.classList.remove('visible');
+      prevEl.style.display = 'none';
+      if (prevId === 'page-letter') stopLetter();
+
+      currentStep = target;
+      const id = allScreens[currentStep];
+      const nextEl = document.getElementById(id);
+      nextEl.classList.add('visible');
+      nextEl.style.display = 'flex';
+      syncNav();
+
+      if (id === 'page-pol') setTimeout(() => setReady('page-pol'), 3000);
+      if (id === 'page-stack') stackSwipes = 0;
+      if (id === 'page-letter') startLetter();
+      if (id === 'page-gift') positionPhone();
+    }
+
+    /* strict swipe: quick, clearly vertical, one page at a time */
+    let touchStartY = 0, touchStartX = 0, touchStartT = 0, touchMulti = false;
+    let isScrollCoolingDown = false;
+    window.addEventListener('touchstart', (e) => {
+      touchMulti = e.touches.length > 1;
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartT = Date.now();
+    }, { passive: true });
+    window.addEventListener('touchend', (e) => {
+      if (isInteractingInternal || isScrollCoolingDown || touchMulti || !e.changedTouches.length) return;
+      if (Date.now() - lastNavTime < 1000) return;
+      const dt = Date.now() - touchStartT;
+      const dY = e.changedTouches[0].clientY - touchStartY;
+      const dX = e.changedTouches[0].clientX - touchStartX;
+      if (dt < 700 && Math.abs(dY) > 110 && Math.abs(dY) > Math.abs(dX) * 2) {
+        navigateStep(dY < 0 ? 1 : -1);
+        isScrollCoolingDown = true;
+        setTimeout(() => { isScrollCoolingDown = false; }, 900);
+      }
+    }, { passive: true });
+    window.addEventListener('touchcancel', () => { setTimeout(() => { isInteractingInternal = false; }, 200); }, { passive: true });
+
+    /* ---------- music ---------- */
+    $('#songTitle').textContent = CONFIG.song.title;
+    $('#songArtist').textContent = CONFIG.song.artist;
+    function syncMusicUI() {
+      const playing = !audioTrack.paused;
+      $('#playBtn').textContent = playing ? '❚❚' : '▶';
+      $('#disc').classList.toggle('playing', playing);
+    }
+    function toggleAudioPlayback() {
+      if (audioTrack.paused) audioTrack.play().catch(() => {});
+      else audioTrack.pause();
+    }
+    audioTrack.addEventListener('play', syncMusicUI);
+    audioTrack.addEventListener('pause', syncMusicUI);
+    let wasPlaying = false;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { wasPlaying = !audioTrack.paused; audioTrack.pause(); }
+      else if (wasPlaying) { audioTrack.play().catch(() => {}); }
+    });
+    window.addEventListener('pagehide', () => audioTrack.pause());
+
+    /* ---------- 1. envelope ---------- */
+    $('#envTitle').textContent = NAME ? 'For ' + NAME : 'For you';
+    $('#cardName').textContent = NAME || 'you';
+    function openEnvelope() {
+      const env = $('#env');
+      if (env.classList.contains('open')) return;
+      env.classList.add('open');
+      audioTrack.play().catch(() => {});
+      $('#envTitle').textContent = NAME ? 'Happy birthday, ' + NAME + '!' : 'Happy birthday!';
+      $('#envSub').textContent = 'Today is all yours';
+      setTimeout(() => boom({ particleCount: 90, spread: 80, origin: { y: 0.5 } }), 700);
+      setTimeout(() => setReady('page-env'), 1000);
+    }
+
+    /* ---------- 2. cake ---------- */
+    $('#cakeAge').textContent = CONFIG.age ? String(CONFIG.age) : '♥';
+    function blowCandles() {
+      if (cakeLit) return;
+      cakeLit = true;
+      const candles = [...document.querySelectorAll('#cake .candle')];
+      candles.forEach((c, i) => setTimeout(() => c.classList.add('out'), i * 140));
+      setTimeout(() => {
+        $('#cake').classList.add('out');
+        $('#page-cake').classList.add('lit');
+        $('#cakeTitle').textContent = NAME ? 'Happy birthday, ' + NAME + '!' : 'Happy birthday!';
+        $('#cakeSub').textContent = CONFIG.age ? 'Here\'s to ' + CONFIG.age + '. Your wish is locked in.' : 'Your wish is locked in.';
+        syncTheme();
+        boom({ particleCount: 160, spread: 110, origin: { y: 0.55 } });
+        setReady('page-cake');
+      }, candles.length * 140 + 250);
+    }
+
+    /* ---------- 3. polaroids ---------- */
+    (function buildPolaroids() {
+      const wrap = $('#polWrap');
+      const rots = [-4, 3, -2, 4, -3, 2];
+      const photos = CONFIG.photos.slice(0, 6);
+      for (let r = 0; r < Math.ceil(photos.length / 3); r++) {
+        const row = el('pol-row');
+        row.appendChild(el('rope'));
+        for (let c = 0; c < 3; c++) {
+          const i = r * 3 + c;
+          const p = photos[i];
+          if (!p) continue;
+          const pol = el('pol');
+          pol.style.setProperty('--rot', rots[i % rots.length] + 'deg');
+          pol.style.animationDelay = (-i * 0.7) + 's';
+          pol.style.animationDuration = (3.6 + (i % 3) * 0.5) + 's';
+          pol.innerHTML = '<i class="peg"></i><div class="pic"></div><span class="cap"></span>';
+          pol.querySelector('.pic').appendChild(photoEl(p, i));
+          pol.querySelector('.cap').textContent = p.cap;
+          pol.addEventListener('click', () => zoomPhoto(p, i));
+          row.appendChild(pol);
+        }
+        wrap.appendChild(row);
+      }
+    })();
+    function zoomPhoto(p, i) {
+      const pic = $('#zoomPic');
+      pic.innerHTML = '';
+      pic.appendChild(photoEl(p, i));
+      $('#zoomCap').textContent = p.cap;
+      $('#zoomModal').style.display = 'flex';
+      setReady('page-pol');
+    }
+
+    /* ---------- 4. flip cards ---------- */
+    (function buildFlip() {
+      const grid = $('#flipGrid');
+      const colors = ['#ffd84d', '#8be3c4', '#bfe0ff', '#ffb3c4', '#ffffff', '#ffcf9e'];
+      let flips = 0;
+      CONFIG.reasons.slice(0, 6).forEach((r, i) => {
+        const fc = el('fc');
+        fc.style.setProperty('--c', colors[i % colors.length]);
+        fc.innerHTML = '<div class="fc-in"><div class="fc-f"><span class="ic"></span><b></b></div><div class="fc-b"></div></div>';
+        fc.querySelector('.ic').textContent = r.icon;
+        fc.querySelector('b').textContent = r.title;
+        fc.querySelector('.fc-b').textContent = r.text;
+        fc.addEventListener('click', () => {
+          fc.classList.toggle('flipped');
+          if (fc.classList.contains('flipped')) { flips++; if (flips >= 3) setReady('page-flip'); }
+        });
+        grid.appendChild(fc);
+      });
+    })();
+
+    /* ---------- 5. balloons ---------- */
+    (function buildBalloons() {
+      const field = $('#balField');
+      const colors = ['#ff4d6d', '#ffd84d', '#4dc3a0', '#5aa9ff', '#b48cff', '#ff9a4d', '#ff7bb0'];
+      const pos = [[8, 42], [30, 36], [52, 44], [74, 38], [18, 60], [44, 58], [70, 60]];
+      const wishes = CONFIG.wishes.slice(0, 7);
+      let popped = 0;
+      const total = wishes.length;
+      const count = $('#balCount');
+      const wishEl = $('#wishText');
+      count.textContent = '0 / ' + total;
+      wishes.forEach((w, i) => {
+        const b = el('bln');
+        b.style.left = pos[i][0] + '%';
+        b.style.top = pos[i][1] + '%';
+        b.style.setProperty('--c', colors[i % colors.length]);
+        b.style.animationDelay = (-i * 0.45) + 's';
+        b.dataset.color = colors[i % colors.length];
+        b.addEventListener('click', () => {
+          if (b.classList.contains('pop')) return;
+          b.classList.add('pop');
+          const r = b.getBoundingClientRect();
+          boom({ particleCount: 26, spread: 80, startVelocity: 22, scalar: 0.9,
+                 origin: { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight },
+                 colors: [b.dataset.color, '#ffffff'] });
+          popped++;
+          count.textContent = popped + ' / ' + total;
+          wishEl.textContent = popped === total ? 'That\'s every wish. They\'re yours now.' : w;
+          wishEl.classList.remove('in'); void wishEl.offsetWidth; wishEl.classList.add('in');
+          if (popped === total) { boom({ particleCount: 140, spread: 110, origin: { y: 0.6 } }); setReady('page-bal'); }
+        });
+        field.appendChild(b);
+      });
+    })();
+
+    /* ---------- 6. swipe photos ---------- */
+    let stackSwipes = 0;
+    (function buildStack() {
+      const stack = $('#stack');
+      const cards = CONFIG.photos.slice(0, 6).map((p, i) => {
+        const c = el('sc');
+        c.innerHTML = '<div class="pic"></div><span class="cap"></span>';
+        c.querySelector('.pic').appendChild(photoEl(p, i));
+        c.querySelector('.cap').textContent = p.cap;
+        stack.appendChild(c);
+        return c;
+      });
+      let flying = false, dragging = false, sx = 0, sy = 0, dx = 0, dy = 0;
+
+      function layout() {
+        cards.forEach((c, k) => {
+          c.style.zIndex = 100 - k;
+          c.style.transform = 'translateY(' + (k * 10) + 'px) scale(' + (1 - k * 0.05) + ') rotate(' + (k === 0 ? 0 : (k % 2 ? 2.5 : -2.5)) + 'deg)';
+          c.style.opacity = k < 4 ? 1 : 0;
+        });
+      }
+      layout();
+
+      stack.addEventListener('pointerdown', (e) => {
+        if (flying || !cards.length) return;
+        dragging = true; sx = e.clientX; sy = e.clientY; dx = 0; dy = 0;
+        cards[0].classList.add('drag');
+        try { stack.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      stack.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        dx = e.clientX - sx; dy = e.clientY - sy;
+        cards[0].style.transform = 'translate(' + dx + 'px,' + (dy * 0.25) + 'px) rotate(' + (dx * 0.07) + 'deg)';
+      });
+      function release() {
+        if (!dragging) return;
+        dragging = false;
+        const top = cards[0];
+        top.classList.remove('drag');
+        const tap = Math.abs(dx) < 6 && Math.abs(dy) < 6;
+        if (Math.abs(dx) > 70 || tap) {
+          const dir = (dx >= 0) ? 1 : -1;
+          flying = true;
+          top.style.transform = 'translate(' + (dir * innerWidth) + 'px,' + (dy * 0.25) + 'px) rotate(' + (dir * 30) + 'deg)';
+          top.style.opacity = 0;
+          setTimeout(() => {
+            cards.push(cards.shift());
+            top.style.transition = 'none';
+            layout();
+            void top.offsetWidth;
+            top.style.transition = '';
+            flying = false;
+            stackSwipes++;
+            if (stackSwipes >= 3) setReady('page-stack');
+          }, 360);
+        } else {
+          layout();
+        }
+      }
+      stack.addEventListener('pointerup', release);
+      stack.addEventListener('pointercancel', release);
+    })();
+
+    /* ---------- 7. letter ---------- */
+    let letterTimer = null, letterDone = false;
+    function stopLetter() { if (letterTimer) { clearInterval(letterTimer); letterTimer = null; } }
+    function finishLetter() {
+      stopLetter();
+      $('#letterText').textContent = CONFIG.letter.body;
+      $('#letterText').classList.remove('caret');
+      $('#letterSign').textContent = CONFIG.letter.sign;
+      $('#letterSign').classList.add('show');
+      letterDone = true;
+      setReady('page-letter');
+    }
+    function startLetter() {
+      stopLetter();
+      letterDone = false;
+      $('#letterHi').textContent = NAME ? 'Dear ' + NAME + ',' : 'Hey you,';
+      $('#letterSign').classList.remove('show');
+      $('#letterSign').textContent = '';
+      const t = $('#letterText');
+      t.classList.add('caret');
+      letterTimer = typeText(t, CONFIG.letter.body, 34, () => {
+        letterTimer = null;
+        finishLetter();
+      });
+    }
+    function tapLetter() { if (letterDone) startLetter(); else finishLetter(); }
+
+    // 8. SURPRISE: GUESS -> MESSAGE -> 3D iPHONE 18 PRO MAX
+    const phoneStageEl = document.getElementById('phoneStage');
+    const i18ChassisEl = document.getElementById('i18Chassis');
+    const guessInput = document.getElementById('guessInput');
+    let giftStarted = false;
+
+    guessInput.addEventListener('focus', () => { isInteractingInternal = true; });
+    guessInput.addEventListener('blur', () => {
+      setTimeout(() => { isInteractingInternal = false; }, 250);
+    });
+    guessInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitGuess(); }
+    });
+
+    function normalizeGuess(s) {
+      return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function positionPhone() {
+      const vh = window.innerHeight;
+      const topPad = 62;      // page dots
+      const bottomPad = 150;  // swipe hint + music dock
+      const avail = Math.max(300, vh - topPad - bottomPad);
+      const ps = Math.max(0.55, Math.min(1.2, avail / 440));
+      phoneStageEl.style.setProperty('--ps', ps);
+      phoneStageEl.style.top = (topPad + avail / 2) + 'px';
+    }
+
+    function submitGuess() {
+      if (giftStarted) return;
+      const raw = guessInput.value.trim();
+
+      if (!raw) {
+        guessInput.classList.remove('shake');
+        void guessInput.offsetWidth;
+        guessInput.classList.add('shake');
+        guessInput.placeholder = 'Type something first 😄';
+        return;
+      }
+
+      giftStarted = true;
+      guessInput.blur();
+
+      const isCorrect = normalizeGuess(raw).includes(CONFIG.gift.answer);
+      const message = isCorrect
+        ? CONFIG.gift.right
+        : CONFIG.gift.wrong;
+
+      document.getElementById('guessPanel').classList.add('hide');
+      document.getElementById('giftSub').style.visibility = 'hidden';
+      boom({ particleCount: 120, spread: 100, origin: { y: 0.6 } });
+
+      const box = document.getElementById('giftBox');
+      box.classList.remove('float');
+      box.classList.add('opened');
+
+      setTimeout(() => {
+        const resultEl = document.getElementById('guessResult');
+        resultEl.style.display = 'block';
+        typeText(resultEl, message, 38, () => {
+          boom({ particleCount: 200, spread: 120, origin: { y: 0.5 } });
+          setTimeout(revealPhone, 500);
+        });
+      }, 900);
+    }
+
+    let phoneRotX = -6, phoneRotY = -25;
+    let phoneVelY = 0;
+    let phoneAutoSpin = true;
+    let phoneDragging = false;
+    let pLastX = 0, pLastY = 0;
+
+    function revealPhone() {
+      positionPhone();
+      document.getElementById('page-gift').classList.add('phone-mode');
+      phoneStageEl.classList.add('revealed');
+      document.getElementById('rotateHint').style.display = 'block';
+    }
+
+    phoneStageEl.addEventListener('pointerdown', (e) => {
+      phoneDragging = true;
+      phoneAutoSpin = false;
+      phoneVelY = 0;
+      isInteractingInternal = true;
+      pLastX = e.clientX;
+      pLastY = e.clientY;
+      try { phoneStageEl.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    phoneStageEl.addEventListener('pointermove', (e) => {
+      if (!phoneDragging) return;
+      const dX = e.clientX - pLastX;
+      const dY = e.clientY - pLastY;
+      pLastX = e.clientX;
+      pLastY = e.clientY;
+      phoneRotY += dX * 0.9;
+      phoneVelY = dX * 0.9;
+      phoneRotX -= dY * 0.7;
+      phoneRotX = Math.max(-50, Math.min(50, phoneRotX));
+    });
+    function endPhoneDrag() {
+      if (!phoneDragging) return;
+      phoneDragging = false;
+      setTimeout(() => { isInteractingInternal = false; }, 200);
+    }
+    phoneStageEl.addEventListener('pointerup', endPhoneDrag);
+    phoneStageEl.addEventListener('pointercancel', endPhoneDrag);
+
+    function stepPhone(k) {
+      if (!phoneStageEl.classList.contains('revealed')) return;
+      if (!phoneDragging) {
+        if (phoneAutoSpin) {
+          phoneRotY += 0.55 * k;
+        } else {
+          phoneRotY += phoneVelY * k;
+          phoneVelY *= 0.95;
+        }
+      }
+      i18ChassisEl.style.transform = `rotateX(${phoneRotX}deg) rotateY(${phoneRotY}deg)`;
+    }
+
+
+    // Build the rounded titanium body: 21 stacked rounded rectangles
+    (function buildRim() {
+      const stack = document.getElementById('rimStack');
+      const N = 21;
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        let l = 13 + 33 * Math.pow(Math.sin(Math.PI * t), 0.8);
+        if (i === 0 || i === N - 1) l = 30;
+        const d = document.createElement('div');
+        d.className = 'rim-layer';
+        d.style.transform = 'translateZ(' + (i - 10) + 'px)';
+        d.style.background = 'hsl(345, 52%, ' + l.toFixed(1) + '%)';
+        stack.appendChild(d);
+      }
+    })();
+
+    /* ---------- main loop: only the gift phone needs per-frame work ---------- */
+    let lastTime = performance.now();
+    function masterLoop(now) {
+      const dt = Math.min(40, now - lastTime);
+      lastTime = now;
+      if (allScreens[currentStep] === 'page-gift') stepPhone(dt / 16.67);
+      requestAnimationFrame(masterLoop);
+    }
+    requestAnimationFrame(masterLoop);
+
+    syncNav();
+    syncMusicUI();
+  </script>
+</body>
+</html>
