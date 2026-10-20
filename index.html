@@ -91,34 +91,56 @@
     body.dark .seg { background: rgba(255,255,255,0.22); }
     body.dark .seg i { background: #fff; }
 
-    /* nav buttons */
-    .nav-btn {
+    /* scroll hint */
+    .scroll-hint {
       position: fixed;
-      bottom: 78px;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 0;
-      background: var(--ink);
-      color: #fff;
+      left: 50%;
+      bottom: 70px;
+      transform: translateX(-50%);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       z-index: 9990;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(21,33,63,0.28);
-      transition: opacity 0.3s, transform 0.2s;
+      pointer-events: none;
+      color: var(--ink);
+      transition: opacity 0.4s;
     }
-    .nav-btn:active { transform: scale(0.92); }
-    .nav-btn:focus-visible { outline: 3px solid var(--cherry); outline-offset: 3px; }
-    .nav-btn.next { right: 16px; }
-    .nav-btn.back { left: 16px; background: rgba(255,255,255,0.9); color: var(--ink); }
-    .nav-btn.hidden { opacity: 0; pointer-events: none; }
-    .nav-btn.next.ready { animation: ring 1.4s infinite; }
-    body.dark .nav-btn.next { background: var(--butter); color: var(--ink); }
-    @keyframes ring {
-      0%   { box-shadow: 0 0 0 0 rgba(255,77,109,0.65), 0 6px 16px rgba(21,33,63,0.28); }
-      100% { box-shadow: 0 0 0 18px rgba(255,77,109,0), 0 6px 16px rgba(21,33,63,0.28); }
+    .scroll-hint.hidden { opacity: 0; }
+    .scroll-hint .chev { display: block; width: 22px; height: 12px; margin-bottom: -2px; animation: chevUp 1.5s infinite; }
+    .scroll-hint .chev.c2 { animation-delay: 0.25s; }
+    .scroll-hint span {
+      margin-top: 4px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 14px;
+      background: rgba(21,33,63,0.1);
+      transition: background 0.3s, color 0.3s;
+    }
+    .scroll-hint.ready span { background: var(--cherry); color: #fff; }
+    body.dark .scroll-hint { color: #fff; }
+    body.dark .scroll-hint span { background: rgba(255,255,255,0.16); }
+    body.dark .scroll-hint.ready span { background: var(--butter); color: var(--ink); }
+    @keyframes chevUp {
+      0%   { opacity: 0; transform: translateY(8px); }
+      50%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-6px); }
+    }
+
+    /* page slide transitions */
+    .screen-view.enter-up   { animation: enterUp 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; z-index: 22; }
+    .screen-view.enter-down { animation: enterDown 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; z-index: 22; }
+    .screen-view.leave-up   { animation: leaveUp 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; }
+    .screen-view.leave-down { animation: leaveDown 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; }
+    @keyframes enterUp   { from { transform: translateY(100%); }  to { transform: none; } }
+    @keyframes enterDown { from { transform: translateY(-100%); } to { transform: none; } }
+    @keyframes leaveUp   { from { transform: none; } to { transform: translateY(-28%); opacity: 0.3; } }
+    @keyframes leaveDown { from { transform: none; } to { transform: translateY(28%); opacity: 0.3; } }
+    .env.shake { animation: shakeEnv 0.5s; }
+    @keyframes shakeEnv {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-9px); } 40% { transform: translateX(9px); }
+      60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
     }
 
     /* ============ SCREEN 1: ENVELOPE ============ */
@@ -259,8 +281,8 @@
       position: absolute;
       left: 50%;
       bottom: 172px;
-      width: 150px;
-      margin-left: -75px;
+      width: 130px;
+      margin-left: -65px;
       display: flex;
       justify-content: space-evenly;
       z-index: 3;
@@ -306,6 +328,43 @@
       0%   { opacity: 0.85; transform: translateY(0) scale(1); }
       100% { opacity: 0; transform: translateY(-56px) scale(4); }
     }
+
+    /* cake: body (can be cloned for the slice), knife, cut-away */
+    .cake-body { position: absolute; inset: 0; z-index: 2; }
+    .cake-slice {
+      z-index: 3;
+      clip-path: inset(0 0 0 72%);
+      transform-origin: 85% 90%;
+      transition: transform 0.9s cubic-bezier(0.3, 1.15, 0.4, 1);
+    }
+    .cake-slice.away { transform: translate(48px, 12px) rotate(7deg); }
+    .cake.cut .cake-body:not(.cake-slice) { clip-path: inset(0 28% 0 0); }
+    .cake-inside { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 0.2s; }
+    .cake.cut .cake-inside { opacity: 1; }
+    .cake-inside i {
+      position: absolute;
+      left: 172px;
+      width: 22px;
+      background: repeating-linear-gradient(180deg, #f2b968 0 12px, #fff3dc 12px 17px);
+      box-shadow: inset 7px 0 9px rgba(120, 60, 20, 0.3);
+    }
+    .cake-inside .in-b { top: 140px; height: 96px; }
+    .cake-inside .in-t { top: 76px; height: 72px; }
+    .knife {
+      position: absolute;
+      left: 167px;
+      top: 0;
+      width: 12px;
+      height: 160px;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-200px);
+      filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3));
+    }
+    .knife.in   { opacity: 1; transform: translateY(-60px); transition: transform 0.35s ease-out, opacity 0.2s; }
+    .knife.in.down { transform: translateY(74px); transition: transform 0.7s cubic-bezier(0.5, 0, 0.3, 1); }
+    .knife.out  { opacity: 0; transform: translateY(-130px); transition: transform 0.5s ease-in, opacity 0.4s; }
 
     /* ============ SCREEN 3: POLAROID LINE ============ */
     #page-pol { background: var(--mint); }
@@ -1139,12 +1198,11 @@
 
   <div class="stories" id="stories"></div>
 
-  <button class="nav-btn back hidden" id="btnBack" aria-label="Previous" onclick="navigateStep(-1)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-  </button>
-  <button class="nav-btn next hidden" id="btnNext" aria-label="Next" onclick="navigateStep(1)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
-  </button>
+  <div class="scroll-hint hidden" id="scrollHint">
+    <svg class="chev" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l8-7 8 7"/></svg>
+    <svg class="chev c2" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l8-7 8 7"/></svg>
+    <span>Scroll up</span>
+  </div>
 
   <!-- 1. ENVELOPE -->
   <section class="screen-view visible" id="page-env" style="display:flex">
@@ -1171,14 +1229,24 @@
     <p class="lede" id="cakeSub">Tap the cake to blow out the candles</p>
     <div class="cake" id="cake" onclick="blowCandles()">
       <div class="plate"></div>
-      <div class="tier t-bot"><div class="cake-age" id="cakeAge"></div></div>
-      <div class="tier t-top"></div>
-      <div class="candles">
-        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
-        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
-        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
-        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
-        <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+      <div class="cake-inside"><i class="in-b"></i><i class="in-t"></i></div>
+      <div class="cake-body">
+        <div class="tier t-bot"><div class="cake-age" id="cakeAge"></div></div>
+        <div class="tier t-top"></div>
+        <div class="candles">
+          <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+          <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+          <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+          <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+          <div class="candle"><i class="flame"></i><i class="smoke"></i></div>
+        </div>
+      </div>
+      <div class="knife" id="knife">
+        <svg viewBox="0 0 12 160" width="12" height="160">
+          <defs><linearGradient id="bladeG" x1="0" x2="1"><stop offset="0" stop-color="#dfe5f3"/><stop offset="0.5" stop-color="#ffffff"/><stop offset="1" stop-color="#a9b3cc"/></linearGradient></defs>
+          <rect x="2" y="0" width="8" height="42" rx="3" fill="#15213f"/>
+          <path d="M1 42 H11 V152 L1 159 Z" fill="url(#bladeG)"/>
+        </svg>
       </div>
     </div>
   </section>
@@ -1522,13 +1590,11 @@
     /* ---------- progress + nav ---------- */
     const storiesEl = $('#stories');
     allScreens.forEach(() => { const s = el('seg'); s.appendChild(document.createElement('i')); storiesEl.appendChild(s); });
-    const btnBack = $('#btnBack');
-    const btnNext = $('#btnNext');
+    const hintEl = $('#scrollHint');
 
     function canAdvance() {
-      const id = allScreens[currentStep];
       if (currentStep >= allScreens.length - 1) return false;
-      if (id === 'page-env' && !ready['page-env']) return false;
+      if (allScreens[currentStep] === 'page-env' && !ready['page-env']) return false;
       return true;
     }
     function syncTheme() {
@@ -1537,43 +1603,59 @@
     }
     function syncNav() {
       const id = allScreens[currentStep];
-      [...storiesEl.children].forEach((s, i) => {
-        s.classList.toggle('done', i < currentStep);
-        s.classList.toggle('now', i === currentStep);
+      [...storiesEl.children].forEach((sg, i) => {
+        sg.classList.toggle('done', i < currentStep);
+        sg.classList.toggle('now', i === currentStep);
       });
-      btnBack.classList.toggle('hidden', currentStep === 0 || id === 'page-gift');
-      btnNext.classList.toggle('hidden', !canAdvance());
-      btnNext.classList.toggle('ready', !!ready[id]);
+      const show = canAdvance();
+      hintEl.classList.toggle('hidden', !show);
+      hintEl.classList.toggle('ready', show && !!ready[id]);
       syncTheme();
     }
     function setReady(id) { ready[id] = true; syncNav(); }
 
+    function nudgeEnvelope() {
+      const e = $('#env');
+      e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake');
+      $('#envSub').textContent = 'Tap the envelope first';
+    }
+
+    let navBusy = false;
     function navigateStep(direction) {
       const target = currentStep + direction;
-      if (target < 0 || target >= allScreens.length) return;
-      if (direction > 0 && !canAdvance()) return;
+      if (target < 0 || target >= allScreens.length || navBusy) return;
+      if (direction > 0 && !canAdvance()) { nudgeEnvelope(); return; }
+      navBusy = true;
       lastNavTime = Date.now();
+      $('#zoomModal').style.display = 'none';
 
+      const up = direction > 0;
       const prevId = allScreens[currentStep];
       const prevEl = document.getElementById(prevId);
-      prevEl.classList.remove('visible');
-      prevEl.style.display = 'none';
       if (prevId === 'page-letter') stopLetter();
 
       currentStep = target;
       const id = allScreens[currentStep];
       const nextEl = document.getElementById(id);
-      nextEl.classList.add('visible');
+      prevEl.classList.add(up ? 'leave-up' : 'leave-down');
       nextEl.style.display = 'flex';
+      nextEl.classList.add('visible', up ? 'enter-up' : 'enter-down');
       syncNav();
 
       if (id === 'page-pol') setTimeout(() => setReady('page-pol'), 3000);
       if (id === 'page-stack') stackSwipes = 0;
       if (id === 'page-letter') startLetter();
       if (id === 'page-gift') positionPhone();
+
+      setTimeout(() => {
+        prevEl.classList.remove('visible', 'leave-up', 'leave-down');
+        prevEl.style.display = 'none';
+        nextEl.classList.remove('enter-up', 'enter-down');
+        navBusy = false;
+      }, 480);
     }
 
-    /* strict swipe: quick, clearly vertical, one page at a time */
+    /* scroll up = next page, scroll down = previous page (touch, mouse wheel, arrow keys) */
     let touchStartY = 0, touchStartX = 0, touchStartT = 0, touchMulti = false;
     let isScrollCoolingDown = false;
     window.addEventListener('touchstart', (e) => {
@@ -1583,18 +1665,30 @@
       touchStartT = Date.now();
     }, { passive: true });
     window.addEventListener('touchend', (e) => {
-      if (isInteractingInternal || isScrollCoolingDown || touchMulti || !e.changedTouches.length) return;
-      if (Date.now() - lastNavTime < 1000) return;
+      if (isInteractingInternal || isScrollCoolingDown || navBusy || touchMulti || !e.changedTouches.length) return;
       const dt = Date.now() - touchStartT;
       const dY = e.changedTouches[0].clientY - touchStartY;
       const dX = e.changedTouches[0].clientX - touchStartX;
-      if (dt < 700 && Math.abs(dY) > 110 && Math.abs(dY) > Math.abs(dX) * 2) {
+      if (dt < 900 && Math.abs(dY) > 60 && Math.abs(dY) > Math.abs(dX) * 1.4) {
         navigateStep(dY < 0 ? 1 : -1);
         isScrollCoolingDown = true;
-        setTimeout(() => { isScrollCoolingDown = false; }, 900);
+        setTimeout(() => { isScrollCoolingDown = false; }, 650);
       }
     }, { passive: true });
     window.addEventListener('touchcancel', () => { setTimeout(() => { isInteractingInternal = false; }, 200); }, { passive: true });
+    window.addEventListener('wheel', (e) => {
+      if (isInteractingInternal || isScrollCoolingDown || navBusy) return;
+      if (Math.abs(e.deltaY) > 30) {
+        navigateStep(e.deltaY > 0 ? 1 : -1);
+        isScrollCoolingDown = true;
+        setTimeout(() => { isScrollCoolingDown = false; }, 700);
+      }
+    }, { passive: true });
+    window.addEventListener('keydown', (e) => {
+      if (e.target && e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') navigateStep(1);
+      else if (e.key === 'ArrowUp' || e.key === 'PageUp') navigateStep(-1);
+    });
 
     /* ---------- music ---------- */
     $('#songTitle').textContent = CONFIG.song.title;
@@ -1645,8 +1739,30 @@
         $('#cakeSub').textContent = CONFIG.age ? 'Here\'s to ' + CONFIG.age + '. Your wish is locked in.' : 'Your wish is locked in.';
         syncTheme();
         boom({ particleCount: 160, spread: 110, origin: { y: 0.55 } });
-        setReady('page-cake');
+        setTimeout(cutCake, 1300);
       }, candles.length * 140 + 250);
+    }
+
+    function cutCake() {
+      const cake = $('#cake');
+      const knife = $('#knife');
+      const slice = cake.querySelector('.cake-body').cloneNode(true);
+      slice.classList.add('cake-slice');
+      const dupId = slice.querySelector('#cakeAge');
+      if (dupId) dupId.removeAttribute('id');
+      cake.insertBefore(slice, knife);
+
+      knife.classList.add('in');
+      setTimeout(() => knife.classList.add('down'), 380);
+      setTimeout(() => {
+        cake.classList.add('cut');
+        knife.classList.remove('in', 'down');
+        knife.classList.add('out');
+        slice.classList.add('away');
+        $('#cakeSub').textContent = 'First slice is yours 🍰';
+        boom({ particleCount: 90, spread: 90, origin: { y: 0.6 } });
+        setReady('page-cake');
+      }, 1150);
     }
 
     /* ---------- 3. polaroids ---------- */
@@ -1763,7 +1879,7 @@
 
       stack.addEventListener('pointerdown', (e) => {
         if (flying || !cards.length) return;
-        dragging = true; sx = e.clientX; sy = e.clientY; dx = 0; dy = 0;
+        dragging = true; isInteractingInternal = true; sx = e.clientX; sy = e.clientY; dx = 0; dy = 0;
         cards[0].classList.add('drag');
         try { stack.setPointerCapture(e.pointerId); } catch (err) {}
       });
@@ -1775,6 +1891,7 @@
       function release() {
         if (!dragging) return;
         dragging = false;
+        setTimeout(() => { isInteractingInternal = false; }, 250);
         const top = cards[0];
         top.classList.remove('drag');
         const tap = Math.abs(dx) < 6 && Math.abs(dy) < 6;
