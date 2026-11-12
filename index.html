@@ -1499,9 +1499,12 @@
     const CONFIG = {
       name: "",              // e.g. "Riya". Leave empty to say "you"
       age: 0,                // e.g. 21. Leave 0 to hide the number
-      song: { title: "Birthday Song", artist: "Just for you" },   // file name must be music.mp3
+      song: { title: "Birthday Song", artist: "Just for you" },   // the song file is found automatically in the music/ folder
 
-      photos: [               // photo1.jpg ... photo6.jpg in the same folder
+      // Photos are found automatically in the photos/ folder (any file names).
+      // Only the captions below are used: caption 1 goes with the 1st photo, and so on.
+      // (If there is no photos/ folder, photo1.jpg ... photo6.jpg are used instead.)
+      photos: [
         { src: "photo1.jpg", cap: "Good times" },
         { src: "photo2.jpg", cap: "Core memory" },
         { src: "photo3.jpg", cap: "Peak laughing" },
@@ -1545,6 +1548,7 @@
 
     const $ = (s) => document.querySelector(s);
     const NAME = CONFIG.name.trim();
+    let PHOTOS = CONFIG.photos.slice();   // replaced by the real list from site.json when it exists
     const allScreens = ['page-env', 'page-cake', 'page-pol', 'page-flip', 'page-bal', 'page-stack', 'page-letter', 'page-gift'];
     let currentStep = 0;
     let lastNavTime = 0;
@@ -1766,10 +1770,10 @@
     }
 
     /* ---------- 3. polaroids ---------- */
-    (function buildPolaroids() {
+    function buildPolaroids() {
       const wrap = $('#polWrap');
       const rots = [-4, 3, -2, 4, -3, 2];
-      const photos = CONFIG.photos.slice(0, 6);
+      const photos = PHOTOS.slice(0, 6);
       for (let r = 0; r < Math.ceil(photos.length / 3); r++) {
         const row = el('pol-row');
         row.appendChild(el('rope'));
@@ -1789,7 +1793,7 @@
         }
         wrap.appendChild(row);
       }
-    })();
+    }
     function zoomPhoto(p, i) {
       const pic = $('#zoomPic');
       pic.innerHTML = '';
@@ -1856,9 +1860,9 @@
 
     /* ---------- 6. swipe photos ---------- */
     let stackSwipes = 0;
-    (function buildStack() {
+    function buildStack() {
       const stack = $('#stack');
-      const cards = CONFIG.photos.slice(0, 6).map((p, i) => {
+      const cards = PHOTOS.slice(0, 12).map((p, i) => {
         const c = el('sc');
         c.innerHTML = '<div class="pic"></div><span class="cap"></span>';
         c.querySelector('.pic').appendChild(photoEl(p, i));
@@ -1916,7 +1920,7 @@
       }
       stack.addEventListener('pointerup', release);
       stack.addEventListener('pointercancel', release);
-    })();
+    }
 
     /* ---------- 7. letter ---------- */
     let letterTimer = null, letterDone = false;
@@ -2091,6 +2095,23 @@
       requestAnimationFrame(masterLoop);
     }
     requestAnimationFrame(masterLoop);
+
+    /* ---------- find photos + song automatically (site.json is written at deploy time) ---------- */
+    function loadSite() {
+      return fetch('site.json', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => {
+          if (d.photos && d.photos.length) {
+            PHOTOS = d.photos.map((f, i) => ({
+              src: 'photos/' + encodeURIComponent(f),
+              cap: (CONFIG.photos[i] && CONFIG.photos[i].cap) || ''
+            }));
+          }
+          if (d.music) { audioTrack.src = 'music/' + encodeURIComponent(d.music); audioTrack.load(); }
+        })
+        .catch(() => {});
+    }
+    loadSite().then(() => { buildPolaroids(); buildStack(); });
 
     syncNav();
     syncMusicUI();
